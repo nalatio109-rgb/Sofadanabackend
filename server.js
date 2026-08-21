@@ -162,6 +162,105 @@ app.delete("/orders/:id", async (req, res) => {
     }
 });
 
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "sofa_dana_secret_key_123";
+
+// 🧱 Model User
+const userSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: "user" } // user or admin
+}, { timestamps: true });
+
+const User = mongoose.model("User", userSchema);
+
+// 🔐 Đăng ký
+app.post("/api/register", async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        
+        // Kiểm tra xem email đã tồn tại chưa
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email đã được sử dụng." });
+        }
+        
+        // Mã hoá mật khẩu
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        
+        // Tạo user mới
+        const newUser = new User({
+            name,
+            email,
+            password: hashedPassword
+        });
+        await newUser.save();
+        
+        res.status(201).json({ message: "Đăng ký thành công" });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+});
+
+// 🔐 Đăng nhập
+app.post("/api/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        // Hardcode tài khoản Admin
+        if (email === "adminsofa@gmail.com" && password === "admin123") {
+            const token = jwt.sign(
+                { id: "admin-id", role: "admin", name: "Admin Sofa" },
+                JWT_SECRET,
+                { expiresIn: "1d" }
+            );
+            return res.json({
+                token,
+                user: {
+                    id: "admin-id",
+                    name: "Admin Sofa",
+                    email: "adminsofa@gmail.com",
+                    role: "admin"
+                }
+            });
+        }
+        
+        // Tìm user theo email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "Email hoặc mật khẩu không đúng." });
+        }
+        
+        // So sánh mật khẩu
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Email hoặc mật khẩu không đúng." });
+        }
+        
+        // Tạo JWT
+        const token = jwt.sign(
+            { id: user._id, role: user.role, name: user.name },
+            JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+        
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+});
+
 // 🚀 chạy server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
