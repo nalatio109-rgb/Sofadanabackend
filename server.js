@@ -60,6 +60,17 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", orderSchema);
 
+// 🧱 Model Blog
+const blogSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    image: { type: String, required: true },
+    content: { type: String, required: true },
+    author: { type: String, default: "Admin SofaDana" },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Blog = mongoose.model("Blog", blogSchema);
+
 // 📄 GET all products
 app.get("/products", async (req, res) => {
     try {
@@ -157,6 +168,62 @@ app.delete("/orders/:id", async (req, res) => {
     try {
         await Order.findByIdAndDelete(req.params.id);
         res.json({ message: "Đã xoá đơn hàng" });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// 📄 GET all blogs
+app.get("/blogs", async (req, res) => {
+    try {
+        const blogs = await Blog.find().sort({ createdAt: -1 });
+        res.json(blogs);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// 📄 GET single blog
+app.get("/blogs/:id", async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id);
+        if (!blog) return res.status(404).json({ message: "Không tìm thấy bài viết" });
+        res.json(blog);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ➕ ADD blog
+app.post("/blogs", async (req, res) => {
+    try {
+        const newBlog = new Blog(req.body);
+        await newBlog.save();
+        res.json(newBlog);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ✏️ UPDATE blog
+app.put("/blogs/:id", async (req, res) => {
+    try {
+        const updated = await Blog.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ❌ DELETE blog
+app.delete("/blogs/:id", async (req, res) => {
+    try {
+        await Blog.findByIdAndDelete(req.params.id);
+        res.json({ message: "Đã xoá bài viết" });
     } catch (err) {
         res.status(500).json(err);
     }
