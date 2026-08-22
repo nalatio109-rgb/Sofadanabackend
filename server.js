@@ -63,9 +63,9 @@ const Order = mongoose.model("Order", orderSchema);
 // 🧱 Model Blog
 const blogSchema = new mongoose.Schema({
     title: { type: String, required: true },
-    image: { type: String, required: true },
     content: { type: String, required: true },
-    author: { type: String, default: "Admin SofaDana" },
+    image: { type: String },
+    author: { type: String, default: "Admin" },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -172,6 +172,8 @@ app.delete("/orders/:id", async (req, res) => {
         res.status(500).json(err);
     }
 });
+
+// ================= BLOG ROUTES ================= //
 
 // 📄 GET all blogs
 app.get("/blogs", async (req, res) => {
