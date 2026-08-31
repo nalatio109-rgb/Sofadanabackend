@@ -71,6 +71,18 @@ const blogSchema = new mongoose.Schema({
 
 const Blog = mongoose.model("Blog", blogSchema);
 
+// 🧱 Model Contact
+const contactSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
+    email: { type: String },
+    message: { type: String, required: true },
+    status: { type: String, default: "Mới" },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Contact = mongoose.model("Contact", contactSchema);
+
 // 📄 GET all products
 app.get("/products", async (req, res) => {
     try {
@@ -172,6 +184,51 @@ app.delete("/orders/:id", async (req, res) => {
         res.status(500).json(err);
     }
 });
+
+// ================= CONTACT API =================
+
+// 📄 GET all contacts
+app.get("/contacts", async (req, res) => {
+    try {
+        const contacts = await Contact.find().sort({ createdAt: -1 });
+        res.json(contacts);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ➕ ADD contact
+app.post("/contacts", async (req, res) => {
+    try {
+        const newContact = new Contact(req.body);
+        await newContact.save();
+        res.json(newContact);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ✏️ UPDATE contact status
+app.put("/contacts/:id", async (req, res) => {
+    try {
+        const updatedContact = await Contact.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updatedContact);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ❌ DELETE contact
+app.delete("/contacts/:id", async (req, res) => {
+    try {
+        await Contact.findByIdAndDelete(req.params.id);
+        res.json({ message: "Đã xoá liên hệ" });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ================== AUTH ======================== //
 
 // ================= BLOG ROUTES ================= //
 
